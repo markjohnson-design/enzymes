@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enzyme Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif; /* Match image style */
+            background-color: #e5e7eb; /* Light gray background */
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .digital-box {
+            background-color: #000;
+            color: #00ff00;
+            border: 4px solid #00ff00;
+            border-radius: 12px;
+            font-family: monospace;
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .digital-btn {
+            background-color: #000;
+            color: #00ff00;
+            border: 4px solid #00ff00;
+            border-radius: 12px;
+            font-family: monospace;
+            padding: 10px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+        .digital-btn:hover { background-color: #111; }
+        .digital-btn:active { transform: scale(0.98); }
+
+        .slider-container { display: flex; align-items: center; justify-content: space-between; }
+        .slider-label { font-size: 1rem; width: 120px; }
+        .slider-val { font-size: 1rem; width: 30px; text-align: right; }
+        
+        input[type=range] {
+            flex-grow: 1;
+            margin: 0 10px;
+            accent-color: #000;
+        }
+
+        .key-icon { width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 8px; }
+
+        canvas#beaker {
+            background-color: #f0f4ff;
+            border-left: 12px solid #cbd5e1;
+            border-bottom: 12px solid #cbd5e1;
+            border-right: 12px solid #cbd5e1;
+            border-radius: 0 0 24px 24px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .graph-container {
+            background-color: #000;
+            padding: 16px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-lg flex flex-col gap-6">
+        
+        <!-- Top Section: Controls and Key -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Sliders Grid (Cols 1 & 2) -->
+            <div class="col-span-2 grid grid-cols-2 gap-x-8 gap-y-4">
+                <!-- Starch -->
+                <div class="slider-container">
+                    <span class="slider-label">Starch:</span>
+                    <input type="range" id="sl-starch" min="0" max="5" step="0.5" value="2.5">
+                    <span class="slider-val" id="val-starch">2.5</span>
+                </div>
+                <!-- Maltose -->
+                <div class="slider-container">
+                    <span class="slider-label">Maltose:</span>
+                    <input type="range" id="sl-maltose" min="0" max="5" step="0.5" value="0">
+                    <span class="slider-val" id="val-maltose">0</span>
+                </div>
+                <!-- Amylase -->
+                <div class="slider-container">
+                    <span class="slider-label">Amylase:</span>
+                    <input type="range" id="sl-amylase" min="0" max="5" step="1" value="1">
+                    <span class="slider-val" id="val-amylase">1</span>
+                </div>
+                <!-- Maltase -->
+                <div class="slider-container">
+                    <span class="slider-label">Maltase:</span>
+                    <input type="range" id="sl-maltase" min="0" max="5" step="1" value="1">
+                    <span class="slider-val" id="val-maltase">1</span>
+                </div>
+                <!-- Temperature -->
+                <div class="slider-container">
+                    <span class="slider-label">Temperature (C):</span>
+                    <input type="range" id="sl-temp" min="0" max="100" step="1" value="35">
+                    <span class="slider-val" id="val-temp">35</span>
+                </div>
+                <!-- pH -->
+                <div class="slider-container">
+                    <span class="slider-label">pH:</span>
+                    <input type="range" id="sl-ph" min="1" max="14" step="1" value="7">
+                    <span class="slider-val" id="val-ph">7</span>
+                </div>
+                <!-- Glucose -->
+                <div class="slider-container">
+                    <span class="slider-label">Glucose:</span>
+                    <input type="range" id="sl-glucose" min="0" max="5" step="0.5" value="1">
+                    <span class="slider-val" id="val-glucose">1</span>
+                </div>
+                <!-- Amylase Inhibitor -->
+                <div class="slider-container">
+                    <span class="slider-label">Amylase Inhibitor:</span>
+                    <input type="range" id="sl-inhibitor" min="0" max="5" step="1" value="0">
+                    <span class="slider-val" id="val-inhibitor">0</span>
+                </div>
+            </div>
+
+            <!-- Key -->
+            <div>
+                <h2 class="text-2xl font-bold mb-4 font-mono">Key:</h2>
+                <ul class="space-y-2 font-mono text-lg">
+                    <li><canvas class="key-icon" id="key-starch"></canvas> Starch (glucose chains)</li>
+                    <li><canvas class="key-icon" id="key-maltose"></canvas> Maltose</li>
+                    <li><canvas class="key-icon" id="key-glucose"></canvas> Glucose</li>
+                    <li><canvas class="key-icon" id="key-amylase"></canvas> Amylase</li>
+                    <li><canvas class="key-icon" id="key-maltase"></canvas> Maltase</li>
+                    <li><canvas class="key-icon" id="key-inhibitor"></canvas> Amylase Inhibitor</li>
+                    <li><canvas class="key-icon" id="key-denat-a"></canvas> Denatured Amylase</li>
+                    <li><canvas class="key-icon" id="key-denat-m"></canvas> Denatured Maltase</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Middle Section: Readouts -->
+        <div class="flex flex-wrap justify-between gap-4">
+            <div class="digital-box flex-1">Starch: <span id="out-starch">2.5</span> mmol/L</div>
+            <div class="digital-box flex-1">Maltose: <span id="out-maltose">0.0</span> mmol/L</div>
+            <div class="digital-box flex-1">Glucose: <span id="out-glucose">1.0</span> mmol/L</div>
+        </div>
+
+        <!-- Bottom Section: Canvas, Controls, Graph -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Canvas (Beaker) -->
+            <div class="lg:col-span-5 relative flex justify-center">
+                <!-- Flared rim of beaker -->
+                <div class="absolute top-[-10px] w-[110%] h-4 bg-slate-300 rounded-full" style="z-index: 1;"></div>
+                <canvas id="beaker" width="400" height="400" class="w-full max-w-[400px] h-[400px]"></canvas>
+            </div>
+
+            <!-- Controls -->
+            <div class="lg:col-span-2 flex flex-col gap-6 justify-center">
+                <div class="digital-box text-lg" id="time-display">0 seconds</div>
+                <button class="digital-btn" id="btn-pause">START</button>
+                <button class="digital-btn" id="btn-reset">RESET</button>
+            </div>
+
+            <!-- Graph -->
+            <div class="lg:col-span-5 graph-container w-full h-[400px]">
+                <h3 class="text-white text-center font-serif text-xl mb-2">Molecule Concentration</h3>
+                <div class="relative h-[330px] w-full">
+                    <canvas id="simChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- UI & State Management ---
+        const sliders = ['starch', 'maltose', 'glucose', 'amylase', 'maltase', 'temp', 'ph', 'inhibitor'];
+        const state = {};
+        
+        sliders.forEach(s => {
+            const el = document.getElementById(`sl-${s}`);
+            const valEl = document.getElementById(`val-${s}`);
+            state[s] = parseFloat(el.value);
+            el.addEventListener('input', (e) => {
+                state[s] = parseFloat(e.target.value);
+                valEl.innerText = e.target.value;
+            });
+        });
+
+        // Conversion: 1 mmol/L = 10 particles
+        const PARTICLE_MULTIPLIER = 10;
+        
+        let isRunning = false;
+        let time = 0;
+        let particles = [];
+        let animationFrameId;
+        let timerIntervalId;
+
+        // --- Chart.js Setup ---
+        const ctxChart = document.getElementById('simChart').getContext('2d');
+        Chart.defaults.color = '#fff';
+        Chart.defaults.font.family = 'Times New Roman';
+        
+        const simChart = new Chart(ctxChart, {
+            type: 'line',
+            data: {
+                labels: [0],
+                datasets: [
+                    { label: 'Starch', data: [state.starch], borderColor: '#9ca3af', backgroundColor: '#9ca3af', pointRadius: 3, borderWidth: 2 },
+                    { label: 'Maltose', data: [state.maltose], borderColor: '#ea580c', backgroundColor: '#ea580c', pointRadius: 3, borderWidth: 2 },
+                    { label: 'Glucose', data: [state.glucose], borderColor: '#eab308', backgroundColor: '#eab308', pointRadius: 3, borderWidth: 2 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Time (seconds)', color: '#fff' }, grid: { color: '#333' } },
+                    y: { 
+                        title: { display: true, text: 'Concentration (mmol/L)', color: '#fff' },
+                        grid: { color: '#333' },
+                        min: 0,
+                        max: 5
+                    }
+                },
+                plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 20, usePointStyle: true, pointStyle: 'line' } }
+                }
+            }
+        });
+
+        // --- Canvas Rendering Helpers ---
+        function drawPacman(ctx, x, y, r, color, angleOffset = 0) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0.2 * Math.PI + angleOffset, 1.8 * Math.PI + angleOffset);
+            ctx.lineTo(x, y);
+            ctx.fill();
+        }
+
+        function drawBlob(ctx, x, y, r, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const rad = r * (0.6 + Math.random() * 0.4);
+                if (i === 0) ctx.moveTo(x + rad * Math.cos(angle), y + rad * Math.sin(angle));
+                else ctx.lineTo(x + rad * Math.cos(angle), y + rad * Math.sin(angle));
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawPill(ctx, x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.roundRect(x - w/2, y - h/2, w, h, h/2);
+            ctx.fill();
+        }
+
+        function drawCircle(ctx, x, y, r, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        // Draw Keys
+        const keyMap = {
+            'starch': (ctx) => drawCircle(ctx, 12, 12, 8, '#9ca3af'),
+            'maltose': (ctx) => drawCircle(ctx, 12, 12, 8, '#ea580c'),
+            'glucose': (ctx) => drawCircle(ctx, 12, 12, 6, '#eab308'),
+            'amylase': (ctx) => drawPacman(ctx, 12, 12, 10, '#1d4ed8'),
+            'maltase': (ctx) => drawPacman(ctx, 12, 12, 10, '#b91c1c'),
+            'inhibitor': (ctx) => drawPill(ctx, 12, 12, 16, 8, '#a855f7'),
+            'denat-a': (ctx) => drawBlob(ctx, 12, 12, 10, '#1e3a8a'),
+            'denat-m': (ctx) => drawBlob(ctx, 12, 12, 10, '#7f1d1d')
+        };
+        for (const [id, drawFn] of Object.entries(keyMap)) {
+            const cvs = document.getElementById(`key-${id}`);
+            cvs.width = 24; cvs.height = 24;
+            drawFn(cvs.getContext('2d'));
+        }
+
+        // --- Physics & Simulation Setup ---
+        const canvas = document.getElementById('beaker');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;
+        const H = canvas.height;
+
+        class Particle {
+            constructor(type) {
+                this.type = type;
+                this.r = type === 'glucose' ? 6 : (type === 'inhibitor' ? 8 : 10);
+                this.x = this.r + Math.random() * (W - 2 * this.r);
+                this.y = this.r + Math.random() * (H - 2 * this.r);
+                
+                // Speed based on temperature
+                const speed = 1 + (state.temp / 25);
+                const angle = Math.random() * Math.PI * 2;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.inhibitedTimer = 0;
+            }
+
+            updateSpeed() {
+                const speed = 1 + (state.temp / 25);
+                const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy) || 1;
+                this.vx = (this.vx / currentSpeed) * speed;
+                this.vy = (this.vy / currentSpeed) * speed;
+            }
+
+            move() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Bounce off walls
+                if (this.x - this.r < 0) { this.x = this.r; this.vx *= -1; }
+                if (this.x + this.r > W) { this.x = W - this.r; this.vx *= -1; }
+                if (this.y - this.r < 0) { this.y = this.r; this.vy *= -1; }
+                if (this.y + this.r > H) { this.y = H - this.r; this.vy *= -1; }
+
+                if (this.inhibitedTimer > 0) this.inhibitedTimer--;
+            }
+
+            draw(ctx) {
+                const t = this.type;
+                if (t === 'starch') drawCircle(ctx, this.x, this.y, this.r, '#9ca3af');
+                else if (t === 'maltose') drawCircle(ctx, this.x, this.y, this.r, '#ea580c');
+                else if (t === 'glucose') drawCircle(ctx, this.x, this.y, this.r, '#eab308');
+                else if (t === 'amylase' || t === 'maltase') {
+                    // Denaturation check
+                    let denatured = false;
+                    if (state.temp > 45 || state.ph < 4 || state.ph > 10) denatured = true;
+                    
+                    const color = t === 'amylase' ? (denatured ? '#1e3a8a' : '#1d4ed8') : (denatured ? '#7f1d1d' : '#b91c1c');
+                    
+                    if (denatured) {
+                        drawBlob(ctx, this.x, this.y, this.r, color);
+                    } else {
+                        // Angle faces direction of movement
+                        const angle = Math.atan2(this.vy, this.vx);
+                        if (t === 'amylase' && this.inhibitedTimer > 0) {
+                            // Draw inhibited state (closed mouth/pill stuck)
+                            drawCircle(ctx, this.x, this.y, this.r, '#1d4ed8');
+                            drawPill(ctx, this.x, this.y, 10, 5, '#a855f7');
+                        } else {
+                            drawPacman(ctx, this.x, this.y, this.r, color, angle);
+                        }
+                    }
+                }
+                else if (t === 'inhibitor') drawPill(ctx, this.x, this.y, 16, 8, '#a855f7');
+            }
+        }
+
+        function spawnParticles() {
+            particles = [];
+            const counts = {
+                'starch': state.starch * PARTICLE_MULTIPLIER,
+                'maltose': state.maltose * PARTICLE_MULTIPLIER,
+                'glucose': state.glucose * PARTICLE_MULTIPLIER,
+                'amylase': state.amylase,
+                'maltase': state.maltase,
+                'inhibitor': state.inhibitor
+            };
+
+            for (const [type, count] of Object.entries(counts)) {
+                for (let i = 0; i < Math.floor(count); i++) {
+                    particles.push(new Particle(type));
+                }
+            }
+        }
+
+        function checkCollisions() {
+            // Enzyme conditions
+            const activeTemp = state.temp <= 45;
+            const activePH = state.ph >= 4 && state.ph <= 10;
+            const enzymesActive = activeTemp && activePH;
+
+            if (!enzymesActive) return; // Denatured enzymes don't react
+
+            // Calculate reaction probability based on temp/ph optimality
+            const tempOptimal = 35;
+            const phOptimal = 7;
+            const tempFactor = Math.exp(-Math.pow(state.temp - tempOptimal, 2) / 150); 
+            const phFactor = Math.exp(-Math.pow(state.ph - phOptimal, 2) / 4);
+            const prob = tempFactor * phFactor * 0.5; // Base probability per frame on collision
+
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p1 = particles[i];
+                    const p2 = particles[j];
+
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < (p1.r + p2.r)) {
+                        // Reaction: Amylase + Starch -> Maltose
+                        if ((p1.type === 'amylase' && p2.type === 'starch') || (p2.type === 'amylase' && p1.type === 'starch')) {
+                            const amylase = p1.type === 'amylase' ? p1 : p2;
+                            const starch = p1.type === 'starch' ? p1 : p2;
+                            
+                            if (amylase.inhibitedTimer <= 0 && Math.random() < prob) {
+                                starch.type = 'maltose';
+                                starch.r = 10;
+                            }
+                        }
+                        // Reaction: Maltase + Maltose -> Glucose
+                        else if ((p1.type === 'maltase' && p2.type === 'maltose') || (p2.type === 'maltase' && p1.type === 'maltose')) {
+                            const maltose = p1.type === 'maltose' ? p1 : p2;
+                            if (Math.random() < prob) {
+                                maltose.type = 'glucose';
+                                maltose.r = 6;
+                            }
+                        }
+                        // Reaction: Amylase + Inhibitor -> Inhibited
+                        else if ((p1.type === 'amylase' && p2.type === 'inhibitor') || (p2.type === 'amylase' && p1.type === 'inhibitor')) {
+                            const amylase = p1.type === 'amylase' ? p1 : p2;
+                            if (Math.random() < 0.2) {
+                                amylase.inhibitedTimer = 60; // 60 frames of inhibition
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function gameLoop() {
+            if (isRunning) {
+                ctx.clearRect(0, 0, W, H);
+                
+                particles.forEach(p => p.updateSpeed());
+                particles.forEach(p => p.move());
+                checkCollisions();
+                particles.forEach(p => p.draw(ctx));
+            }
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function updateData() {
+            if (!isRunning) return;
+            time++;
+            document.getElementById('time-display').innerText = `${time} seconds`;
+
+            let sCount = 0, mCount = 0, gCount = 0;
+            particles.forEach(p => {
+                if (p.type === 'starch') sCount++;
+                if (p.type === 'maltose') mCount++;
+                if (p.type === 'glucose') gCount++;
+            });
+
+            const sVal = (sCount / PARTICLE_MULTIPLIER).toFixed(1);
+            const mVal = (mCount / PARTICLE_MULTIPLIER).toFixed(1);
+            const gVal = (gCount / PARTICLE_MULTIPLIER).toFixed(1);
+
+            document.getElementById('out-starch').innerText = sVal;
+            document.getElementById('out-maltose').innerText = mVal;
+            document.getElementById('out-glucose').innerText = gVal;
+
+            simChart.data.labels.push(time);
+            simChart.data.datasets[0].data.push(sVal);
+            simChart.data.datasets[1].data.push(mVal);
+            simChart.data.datasets[2].data.push(gVal);
+            simChart.update();
+        }
+
+        // --- Controls ---
+        const btnPause = document.getElementById('btn-pause');
+        const btnReset = document.getElementById('btn-reset');
+
+        btnPause.addEventListener('click', () => {
+            isRunning = !isRunning;
+            btnPause.innerText = isRunning ? 'PAUSE' : 'RESUME';
+            if (isRunning && time === 0 && particles.length === 0) {
+                spawnParticles();
+            }
+        });
+
+        btnReset.addEventListener('click', () => {
+            isRunning = false;
+            btnPause.innerText = 'START';
+            time = 0;
+            document.getElementById('time-display').innerText = '0 seconds';
+            
+            // Re-read sliders for initial state
+            sliders.forEach(s => {
+                const el = document.getElementById(`sl-${s}`);
+                state[s] = parseFloat(el.value);
+            });
+            
+            spawnParticles();
+            
+            // Reset Chart
+            simChart.data.labels = [0];
+            simChart.data.datasets[0].data = [state.starch];
+            simChart.data.datasets[1].data = [state.maltose];
+            simChart.data.datasets[2].data = [state.glucose];
+            simChart.update();
+
+            document.getElementById('out-starch').innerText = state.starch.toFixed(1);
+            document.getElementById('out-maltose').innerText = state.maltose.toFixed(1);
+            document.getElementById('out-glucose').innerText = state.glucose.toFixed(1);
+
+            // Clear and redraw initial state on canvas
+            ctx.clearRect(0, 0, W, H);
+            particles.forEach(p => p.draw(ctx));
+        });
+
+        // Init
+        spawnParticles();
+        ctx.clearRect(0, 0, W, H);
+        particles.forEach(p => p.draw(ctx));
+        requestAnimationFrame(gameLoop);
+        setInterval(updateData, 1000); // 1 second intervals for data
+        
+    </script>
+</body>
+</html>
